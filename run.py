@@ -1,3 +1,6 @@
+import time
+
+
 def str_to_int_list(s_):
     return [int(x) for x in s_]
 
@@ -10,7 +13,7 @@ def print_maze(m_):
         print(*l)
 
 
-def content_of(matrix_: list, position_: tuple, y_: int = 0, x_: int = 0):
+def node_in(matrix_: list, position_: tuple, y_: int = 0, x_: int = 0):
     try:
         return matrix_[position_[0]+y_][position_[1]+x_]
     except IndexError:
@@ -65,25 +68,44 @@ class Node():
 
 
 class Pathfinder():
-    def __init__(self, maze_: list):
+    def __init__(self, maze_: list, start_: tuple):
+        self.start = start_
         self.maze = maze_
-        self.queue = []
+        self.queue = [node_in(maze_, start_)]
+        node_in(maze_, start_).visit()
 
     def neighbor_check(self, neighbor_: Node):
-        if neighbor_.symbol != "#" and neighbor_ not in self.queue:
+        if neighbor_.symbol != "#" and neighbor_ not in self.queue and not neighbor_.visited:
+            neighbor_.visit()
+            if neighbor_.symbol == ".":
+                neighbor_.symbol = "*"
             self.queue.append(neighbor_)
 
-    def neighbors_queue(self, position_: tuple):
-        self.neighbor_check(content_of(self.maze, position_, 1, 0))
-        self.neighbor_check(content_of(self.maze, position_, 0, 1))
-        self.neighbor_check(content_of(self.maze, position_, -1, 0))
-        self.neighbor_check(content_of(self.maze, position_, 0, -1))
+    def neighbors_queue(self, node_: Node):
+        self.neighbor_check(node_in(self.maze, node_.position, 1, 0))
+        self.neighbor_check(node_in(self.maze, node_.position, 0, 1))
+        self.neighbor_check(node_in(self.maze, node_.position, -1, 0))
+        self.neighbor_check(node_in(self.maze, node_.position, 0, -1))
+
+    def find_path(self):
+        focus = self.queue[0]
+        not_end = True
+        while not_end:
+            self.neighbors_queue(focus)
+            focus = self.queue.pop(0)
+            not_end = focus.symbol != "e"
+
+            print_maze(self.maze)
+            print()
+            time.sleep(1)
+            if focus.symbol == "*":
+                focus.symbol = "@"
+
+        else:
+            print(f"found {focus.position}")
 
 
 maze = Board(maze_str, start, end)
 
-p = Pathfinder(maze.maze)
-p.neighbors_queue((5, 3))
-print(p.queue)
-
-print_maze(maze.maze)
+p = Pathfinder(maze.maze, start)
+p.find_path()
